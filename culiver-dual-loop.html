@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CULIVER · 해수-민물 듀얼 루프 흐름도</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+                 'Noto Sans KR', 'Noto Sans CJK KR', 'Malgun Gothic', '맑은 고딕', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #0a1929;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    margin-bottom: 16px;
+  }
+  .title-block .eyebrow {
+    font-size: 11px; letter-spacing: 0.2em; color: #f59e0b;
+    font-weight: 700; margin-bottom: 6px;
+  }
+  .title-block h1 {
+    font-size: 26px; font-weight: 800; color: #fff; line-height: 1.2;
+  }
+  .title-block p {
+    font-size: 13px; color: #94a3b8; margin-top: 4px;
+  }
+
+  /* Filter toggles */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-btn {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .filter-btn:hover { background: rgba(30, 41, 59, 0.9); color: #fff; }
+  .filter-btn.active.all { background: #fff; color: #0a1929; border-color: #fff; }
+  .filter-btn.active.loop1 { background: #06b6d4; color: #0a1929; border-color: #06b6d4; }
+  .filter-btn.active.loop2 { background: #10b981; color: #0a1929; border-color: #10b981; }
+  .filter-btn .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle;
+  }
+
+  /* Main grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* SVG diagram */
+  .diagram-card {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(10, 15, 30, 0.95));
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .diagram-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 20%, rgba(6, 182, 212, 0.08), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.08), transparent 50%);
+    pointer-events: none;
+  }
+  svg.diagram { width: 100%; height: auto; display: block; position: relative; z-index: 1; }
+
+  /* Node styles - SVG groups */
+  .node { cursor: pointer; transition: opacity 0.3s ease; }
+  .node-bg {
+    transition: fill 0.2s ease, stroke 0.2s ease, filter 0.3s ease;
+  }
+  .node:hover .node-bg {
+    filter: drop-shadow(0 0 12px currentColor);
+  }
+  .node.selected .node-bg {
+    filter: drop-shadow(0 0 16px currentColor);
+    stroke-width: 2.5;
+  }
+  .node-label {
+    fill: #fff; font-size: 13.5px; font-weight: 800;
+    text-anchor: middle; pointer-events: none;
+    font-family: inherit;
+    letter-spacing: -0.01em;
+  }
+  .node-sublabel {
+    fill: #cbd5e1; font-size: 11.5px; font-weight: 500;
+    text-anchor: middle; pointer-events: none;
+    font-family: inherit;
+  }
+
+  /* Loop colors */
+  .loop1 .node-bg { fill: rgba(6, 182, 212, 0.15); stroke: #06b6d4; color: #06b6d4; }
+  .loop2 .node-bg { fill: rgba(16, 185, 129, 0.15); stroke: #10b981; color: #10b981; }
+  .junction .node-bg { fill: rgba(148, 163, 184, 0.15); stroke: #94a3b8; color: #94a3b8; }
+  .resource .node-bg { fill: rgba(245, 158, 11, 0.15); stroke: #f59e0b; color: #f59e0b; }
+  .external .node-bg { fill: rgba(15, 23, 42, 0.8); stroke: #475569; stroke-dasharray: 4 3; color: #64748b; }
+  /* Final (비료화/토출) - 빨간색 계열, 최종 단계 */
+  .final .node-bg { fill: rgba(239, 68, 68, 0.18); stroke: #ef4444; stroke-width: 2; color: #ef4444; }
+
+  /* Flow lines - thicker for visibility */
+  .flow {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-dasharray: 7 5;
+    stroke-linecap: round;
+    transition: opacity 0.3s ease;
+  }
+  .flow.loop1 { stroke: #06b6d4; animation: dash 1.2s linear infinite; }
+  .flow.loop2 { stroke: #10b981; animation: dash 1.2s linear infinite; }
+  .flow.resource { stroke: #f59e0b; animation: dash 1.2s linear infinite; }
+  .flow.final { stroke: #ef4444; animation: dash 1.2s linear infinite; stroke-width: 3; }
+  .flow.external { stroke: #64748b; stroke-dasharray: 4 5; animation: none; opacity: 0.75; stroke-width: 2; }
+  @keyframes dash { to { stroke-dashoffset: -24; } }
+
+  /* Filter modes - dim non-active loops */
+  .mode-loop1 .loop2-only { opacity: 0.15; }
+  .mode-loop2 .loop1-only { opacity: 0.15; }
+
+  /* Loop label badges in SVG */
+  .loop-badge {
+    font-size: 13px; font-weight: 800; letter-spacing: 1.5px;
+    font-family: inherit;
+  }
+
+  /* Pipe labels (no halo, simple text) */
+  .pipe-label {
+    font-size: 12px; fill: #e2e8f0; font-weight: 700;
+    font-family: inherit;
+  }
+
+  /* Stat callouts on nodes - amber highlight, no halo */
+  .stat-callout {
+    font-size: 12px; font-weight: 800; fill: #fbbf24;
+    font-family: inherit;
+  }
+
+  /* Side panel */
+  .panel {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    position: sticky; top: 16px;
+    min-height: 400px;
+  }
+  .panel-eyebrow {
+    font-size: 11px; letter-spacing: 0.15em; font-weight: 700;
+    color: #f59e0b; margin-bottom: 8px;
+  }
+  .panel h2 {
+    font-size: 22px; font-weight: 800; color: #fff;
+    margin-bottom: 6px; line-height: 1.2;
+  }
+  .panel .panel-tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+  }
+  .tag-loop1 { background: rgba(6, 182, 212, 0.15); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.4); }
+  .tag-loop2 { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+  .tag-junction { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.4); }
+  .tag-resource { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+  .tag-external { background: rgba(71, 85, 105, 0.2); color: #94a3b8; border: 1px solid rgba(71, 85, 105, 0.5); }
+  .tag-final { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
+
+  .panel p.desc {
+    font-size: 13px; line-height: 1.6; color: #cbd5e1;
+    margin-bottom: 16px;
+  }
+
+  .panel .specs {
+    display: grid; gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+  }
+  .spec-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px;
+  }
+  .spec-label { color: #94a3b8; }
+  .spec-value { color: #fff; font-weight: 700; }
+
+  .panel .tip {
+    margin-top: 14px;
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 2px solid #f59e0b;
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #fbbf24;
+  }
+
+  /* Bottom legend */
+  .legend {
+    margin-top: 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; flex-wrap: wrap; gap: 20px;
+    font-size: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: #cbd5e1; }
+  .legend-swatch { width: 24px; height: 3px; border-radius: 2px; }
+  .legend-swatch.dashed { background-image: linear-gradient(to right, currentColor 60%, transparent 40%); background-size: 6px 100%; height: 2px; }
+
+  /* Hint pulse */
+  .hint {
+    position: absolute; top: 18px; right: 18px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11px; font-weight: 600;
+    z-index: 2;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.9; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.04); }
+  }
+
+  /* ========== Theme toggle button ========== */
+  .theme-toggle {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .theme-toggle:hover { background: rgba(30, 41, 59, 0.9); color: #fff; }
+
+  /* ========== LIGHT MODE OVERRIDE ========== */
+  body.light {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  body.light .title-block h1 { color: #0f172a; }
+  body.light .title-block p { color: #475569; }
+  body.light .title-block .eyebrow { color: #b45309; }
+  body.light .header { border-bottom-color: #e2e8f0; }
+
+  body.light .filter-btn {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+  body.light .filter-btn:hover { background: #f8fafc; color: #0f172a; }
+  body.light .filter-btn.active.all { background: #0f172a; color: #ffffff; border-color: #0f172a; }
+  body.light .filter-btn.active.loop1 { background: #0891b2; color: #ffffff; border-color: #0891b2; }
+  body.light .filter-btn.active.loop2 { background: #059669; color: #ffffff; border-color: #059669; }
+
+  body.light .theme-toggle {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+  body.light .theme-toggle:hover { background: #f8fafc; color: #0f172a; }
+
+  body.light .diagram-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+  }
+  body.light .diagram-card::before {
+    background: radial-gradient(circle at 30% 20%, rgba(6, 182, 212, 0.04), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.04), transparent 50%);
+  }
+
+  body.light .node-label { fill: #0f172a; }
+  body.light .node-sublabel { fill: #475569; }
+
+  body.light .loop1 .node-bg { fill: rgba(6, 182, 212, 0.08); stroke: #0891b2; color: #0891b2; }
+  body.light .loop2 .node-bg { fill: rgba(16, 185, 129, 0.08); stroke: #059669; color: #059669; }
+  body.light .junction .node-bg { fill: #f1f5f9; stroke: #94a3b8; color: #94a3b8; }
+  body.light .resource .node-bg { fill: rgba(245, 158, 11, 0.1); stroke: #d97706; color: #d97706; }
+  body.light .external .node-bg { fill: #ffffff; stroke: #94a3b8; color: #94a3b8; }
+  body.light .final .node-bg { fill: rgba(239, 68, 68, 0.1); stroke: #dc2626; color: #dc2626; }
+
+  body.light .flow.loop1 { stroke: #0891b2; }
+  body.light .flow.loop2 { stroke: #059669; }
+  body.light .flow.resource { stroke: #d97706; }
+  body.light .flow.final { stroke: #dc2626; }
+  body.light .flow.external { stroke: #94a3b8; }
+
+  body.light .pipe-label {
+    fill: #0f172a;
+  }
+  body.light .stat-callout {
+    fill: #b45309;
+  }
+
+  body.light .panel {
+    background: #ffffff;
+    border-color: #e2e8f0;
+  }
+  body.light .panel h2 { color: #0f172a; }
+  body.light .panel p.desc { color: #475569; }
+  body.light .panel .specs { border-top-color: #e2e8f0; }
+  body.light .panel .spec-label { color: #94a3b8; }
+  body.light .panel .spec-value { color: #0f172a; }
+  body.light .panel-eyebrow { color: #b45309; }
+
+  body.light .panel-tag { /* inherits per-tag colors */ }
+  body.light .tag-loop1 { background: rgba(6, 182, 212, 0.1); color: #0e7490; border-color: rgba(6, 182, 212, 0.4); }
+  body.light .tag-loop2 { background: rgba(16, 185, 129, 0.1); color: #047857; border-color: rgba(16, 185, 129, 0.4); }
+  body.light .tag-junction { background: rgba(148, 163, 184, 0.15); color: #475569; border-color: #cbd5e1; }
+  body.light .tag-resource { background: rgba(245, 158, 11, 0.1); color: #b45309; border-color: rgba(245, 158, 11, 0.4); }
+  body.light .tag-external { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+  body.light .tag-final { background: rgba(239, 68, 68, 0.1); color: #b91c1c; border-color: rgba(239, 68, 68, 0.4); }
+
+  body.light .panel .tip {
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+    border-left-color: #d97706;
+  }
+
+  body.light .legend {
+    background: #ffffff;
+    border-color: #e2e8f0;
+  }
+  body.light .legend-item { color: #475569; }
+
+  body.light .hint {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
+  /* SVG grid pattern adapts via JS (set on body class) — see <pattern> rule inline */
+  body.light .grid-line { stroke: rgba(15, 23, 42, 0.05); }
+  body:not(.light) .grid-line { stroke: rgba(148, 163, 184, 0.05); }
+
+  /* Inline SVG element overrides (text fills set inline in SVG) */
+  body.light text[fill="#cbd5e1"] { fill: #475569 !important; }
+  body.light text[fill="#fbbf24"] { fill: #b45309 !important; }
+  body.light text[fill="#67e8f9"] { fill: #0e7490 !important; }
+  body.light text[fill="#6ee7b7"] { fill: #047857 !important; }
+  body.light text[fill="#64748b"] { fill: #475569 !important; }
+
+  /* inline style="fill:..." needs separate selectors */
+  body.light text[style*="#67e8f9"],
+  body.light text[style*="67e8f9"] { fill: #0e7490 !important; }
+  body.light text[style*="#6ee7b7"],
+  body.light text[style*="6ee7b7"] { fill: #047857 !important; }
+  body.light text[style*="#94a3b8"],
+  body.light text[style*="94a3b8"] { fill: #475569 !important; }
+  body.light text[style*="#fbbf24"],
+  body.light text[style*="fbbf24"] { fill: #b45309 !important; }
+
+  /* Red labels (final cluster) — light mode override */
+  body.light text[fill="#fca5a5"] { fill: #b91c1c !important; }
+  body.light text[fill="#ef4444"] { fill: #dc2626 !important; }
+
+  /* Loop badge rect/text colors in light mode */
+  body.light rect[stroke="#10b981"] { stroke: #059669; fill: rgba(16, 185, 129, 0.1) !important; }
+  body.light rect[stroke="#06b6d4"] { stroke: #0891b2; fill: rgba(6, 182, 212, 0.1) !important; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="header">
+    <div class="title-block">
+      <div class="eyebrow">CULIVER · 복합 스마트팜 시스템 다이어그램</div>
+      <h1>해수–민물 듀얼 루프 흐름도</h1>
+      <p>각 노드를 클릭하면 상세 정보가 표시됩니다. 상단 버튼으로 루프별로 필터링할 수 있습니다.</p>
+    </div>
+    <div class="filters">
+      <button class="theme-toggle" id="themeToggle" title="다크/라이트 모드 전환">☀️ 라이트</button>
+      <button class="filter-btn active all" data-mode="all"><span class="dot" style="background:#fff"></span>전체</button>
+      <button class="filter-btn" data-mode="loop1"><span class="dot" style="background:#06b6d4"></span>Loop-1 해수</button>
+      <button class="filter-btn" data-mode="loop2"><span class="dot" style="background:#10b981"></span>Loop-2 민물</button>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <div class="diagram-card" id="diagramCard">
+      <div class="hint">노드를 클릭해보세요 →</div>
+      <svg class="diagram" viewBox="0 0 1400 660" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background grid pattern -->
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(148,163,184,0.05)" stroke-width="1"/>
+          </pattern>
+          <marker id="arrow-loop1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#06b6d4"/>
+          </marker>
+          <marker id="arrow-loop2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/>
+          </marker>
+          <marker id="arrow-resource" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/>
+          </marker>
+          <marker id="arrow-external" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+          </marker>
+          <marker id="arrow-final" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+          </marker>
+        </defs>
+        <rect width="1400" height="660" fill="url(#grid)"/>
+
+        <!-- ============ LOOP-2 BADGE (top-left) ============ -->
+        <g transform="translate(50, 25)">
+          <rect width="140" height="32" rx="16" fill="rgba(16,185,129,0.18)" stroke="#10b981" stroke-width="1.8"/>
+          <text x="70" y="21" text-anchor="middle" class="loop-badge" fill="#6ee7b7">LOOP—2 민물</text>
+        </g>
+
+        <!-- ============ LOOP-2 ROW (y=110-180) ============ -->
+        <g class="node loop2 loop2-only" data-id="dilution" transform="translate(70, 110)">
+          <rect class="node-bg" width="160" height="70" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="80" y="28">희석조</text>
+          <text class="node-sublabel" x="80" y="46">슬러지 + 민물 + 폐배양액</text>
+          <text class="stat-callout" x="80" y="62" text-anchor="middle">→ 염도 ≈ 0</text>
+        </g>
+
+        <g class="node loop2 loop2-only" data-id="sediment2" transform="translate(260, 110)">
+          <rect class="node-bg" width="160" height="70" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="80" y="28">침전조 ②</text>
+          <text class="node-sublabel" x="80" y="46">DO · 미생물</text>
+          <text class="node-sublabel" x="80" y="62" style="fill:#6ee7b7; font-weight:700;">2차 고액분리</text>
+        </g>
+
+        <g class="node loop2 loop2-only" data-id="hydro" transform="translate(450, 110)">
+          <rect class="node-bg" width="140" height="70" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="70" y="32">수경재배 베드 ①~④</text>
+          <text class="node-sublabel" x="70" y="50">민물 + 영양액 순환</text>
+        </g>
+
+        <g class="node loop2 loop2-only" data-id="hydro2" transform="translate(620, 110)">
+          <rect class="node-bg" width="140" height="70" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="70" y="32">작물 재배</text>
+          <text class="node-sublabel" x="70" y="50">엽채류 · 허브 등</text>
+        </g>
+
+        <g class="node loop2 loop2-only" data-id="hydro3" transform="translate(790, 110)">
+          <rect class="node-bg" width="140" height="70" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="70" y="32">베드 순환</text>
+          <text class="node-sublabel" x="70" y="50">4단 다층 구조</text>
+        </g>
+
+        <g class="node loop2 loop2-only" data-id="hydro4" transform="translate(960, 110)">
+          <rect class="node-bg" width="170" height="70" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="85" y="32">폐배양액 회수</text>
+          <text class="node-sublabel" x="85" y="50">→ 희석조 환류</text>
+        </g>
+
+        <!-- Loop-2 horizontal flow arrows (y=145) -->
+        <path class="flow loop2 loop2-only" d="M 230 145 L 260 145" marker-end="url(#arrow-loop2)"/>
+        <path class="flow loop2 loop2-only" d="M 420 145 L 450 145" marker-end="url(#arrow-loop2)"/>
+        <path class="flow loop2 loop2-only" d="M 590 145 L 620 145" marker-end="url(#arrow-loop2)"/>
+        <path class="flow loop2 loop2-only" d="M 760 145 L 790 145" marker-end="url(#arrow-loop2)"/>
+        <path class="flow loop2 loop2-only" d="M 930 145 L 960 145" marker-end="url(#arrow-loop2)"/>
+
+        <!-- Loop-2 환류: 폐배양액 회수 → 희석조 (위로 큰 곡선, y=70) -->
+        <path class="flow loop2 loop2-only" d="M 1045 110 L 1045 70 L 150 70 L 150 110" marker-end="url(#arrow-loop2)"/>
+        <text class="pipe-label loop2-only" x="597" y="63" text-anchor="middle">폐배양액 회수 → 희석조 환류</text>
+
+        <!-- 신규 유입 민물 배양액 (희석조 아래, 약간 더 내림) -->
+        <g class="node external loop2-only" data-id="freshIn" transform="translate(70, 250)">
+          <rect class="node-bg" width="160" height="45" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="80" y="20" fill="#cbd5e1">신규 유입: 민물 배양액</text>
+          <text class="node-sublabel" x="80" y="36">보충용 소량</text>
+        </g>
+        <!-- 신규 유입 민물 → 희석조 바닥 우측 진입 -->
+        <path class="flow external loop2-only" d="M 180 250 L 180 180" marker-end="url(#arrow-external)"/>
+
+        <!-- ============ SLUDGE BOX (center, y=290-345) ============ -->
+        <g class="node junction" data-id="sludge" transform="translate(310, 290)">
+          <rect class="node-bg" width="170" height="55" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="85" y="24">슬러지</text>
+          <text class="node-sublabel" x="85" y="42">약 30% · 염도 ~10‰</text>
+        </g>
+
+        <!-- 고액분리 → 슬러지 (Loop-1 row 위로) -->
+        <path class="flow loop1 loop1-only" d="M 395 400 L 395 345" marker-end="url(#arrow-loop2)"/>
+
+        <!-- 슬러지 → 희석조 (희석조 바닥 좌측에서 진입 - 변경됨) -->
+        <path class="flow loop2 loop2-only" d="M 310 317 L 250 317 L 250 200 L 120 200 L 120 180" marker-end="url(#arrow-loop2)"/>
+        <text class="pipe-label loop2-only" x="262" y="260">슬러지 →<tspan x="262" dy="14">희석조 (영양)</tspan></text>
+
+        <!-- 슬러지 → 비료화 (우측 길게, 최종) -->
+        <path class="flow final" d="M 480 317 L 1200 317 L 1200 290 L 1230 290" marker-end="url(#arrow-final)"/>
+        <text class="pipe-label" x="810" y="310" text-anchor="middle" fill="#fca5a5">슬러지 → 비료화</text>
+
+        <!-- 침전조② → 비료화 (Loop-2 슬러지, 위쪽 우측) -->
+        <path class="flow final" d="M 340 180 L 340 220 L 1180 220 L 1180 250 L 1230 250" marker-end="url(#arrow-final)"/>
+        <text class="pipe-label" x="750" y="213" text-anchor="middle" fill="#fca5a5">침전조② 슬러지 → 비료화</text>
+
+        <!-- ============ LOOP-1 ROW (y=400-500) ============ -->
+        <g class="node loop1 loop1-only" data-id="shrimp" transform="translate(70, 400)">
+          <rect class="node-bg" width="210" height="100" rx="8" stroke-width="2"/>
+          <text class="node-label" x="105" y="36" style="font-size:14px;">해수: 흰다리새우 양식조</text>
+          <text class="node-sublabel" x="105" y="58">RAS 방식 · 염도 30‰</text>
+          <text class="stat-callout" x="105" y="78" text-anchor="middle">🦐 메인 생산 시설</text>
+        </g>
+
+        <g class="node junction" data-id="separator" transform="translate(310, 400)">
+          <rect class="node-bg" width="170" height="100" rx="8" stroke-width="2"/>
+          <text class="node-label" x="85" y="36">고액분리</text>
+          <text class="node-sublabel" x="85" y="58">드럼 또는 짤순이</text>
+          <text class="stat-callout" x="85" y="78" text-anchor="middle">⚙ 핵심 분기점</text>
+        </g>
+
+        <g class="node loop1 loop1-only" data-id="supernatant" transform="translate(510, 400)">
+          <rect class="node-bg" width="170" height="100" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="85" y="36">상등수</text>
+          <text class="node-sublabel" x="85" y="58">전체 처리수의 약 70%</text>
+          <text class="stat-callout" x="85" y="78" text-anchor="middle">염도 30‰ (해수 그대로)</text>
+        </g>
+
+        <g class="node loop1 loop1-only" data-id="sediment1" transform="translate(710, 400)">
+          <rect class="node-bg" width="170" height="100" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="85" y="36">침전조 ①</text>
+          <text class="node-sublabel" x="85" y="58">DO · 미생물 · UV</text>
+          <text class="node-sublabel" x="85" y="76" style="fill:#67e8f9; font-weight:700;">수질 안정화 + 슬러지 회수</text>
+        </g>
+
+        <!-- Loop-1 horizontal flow arrows (y=450) -->
+        <path class="flow loop1 loop1-only" d="M 280 450 L 310 450" marker-end="url(#arrow-loop1)"/>
+        <path class="flow loop1 loop1-only" d="M 480 450 L 510 450" marker-end="url(#arrow-loop1)"/>
+        <path class="flow loop1 loop1-only" d="M 680 450 L 710 450" marker-end="url(#arrow-loop1)"/>
+
+        <!-- Loop-1 환류: 침전조① → 양식조 (위로 곡선, y=380) -->
+        <path class="flow loop1 loop1-only" d="M 795 400 L 795 380 L 175 380 L 175 400" marker-end="url(#arrow-loop1)"/>
+        <text class="pipe-label loop1-only" x="485" y="373" text-anchor="middle" fill="#67e8f9">해수 순환 (Loop-1)</text>
+
+        <!-- 침전조① → 비료화 (Loop-1 슬러지, 아래쪽 우측 진입) -->
+        <path class="flow final" d="M 880 450 L 1110 450 L 1110 330 L 1230 330" marker-end="url(#arrow-final)"/>
+        <text class="pipe-label" x="995" y="443" text-anchor="middle" fill="#fca5a5">침전조① 슬러지 → 비료화</text>
+
+        <!-- 신규 유입 해수 (양식조 아래) -->
+        <g class="node external loop1-only" data-id="seaIn" transform="translate(70, 525)">
+          <rect class="node-bg" width="210" height="45" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="105" y="20" fill="#cbd5e1">신규 유입 해수</text>
+          <text class="node-sublabel" x="105" y="36">보충용 소량 (외부)</text>
+        </g>
+        <path class="flow external loop1-only" d="M 175 525 L 175 500" marker-end="url(#arrow-external)"/>
+
+        <!-- ============ LOOP-1 BADGE (next to 신규유입해수) ============ -->
+        <g transform="translate(310, 535)">
+          <rect width="140" height="32" rx="16" fill="rgba(6,182,212,0.18)" stroke="#06b6d4" stroke-width="1.8"/>
+          <text x="70" y="21" text-anchor="middle" class="loop-badge" fill="#67e8f9">LOOP—1 해수</text>
+        </g>
+
+        <!-- ============ RIGHT SIDE: 비료화 + 토출 (최종 단계, 빨간색) ============ -->
+        <g class="node final" data-id="fertilizer" transform="translate(1230, 230)">
+          <rect class="node-bg" width="140" height="120" rx="8" stroke-width="2"/>
+          <text class="node-label" x="70" y="40">비료화</text>
+          <text class="node-sublabel" x="70" y="64">3-입력 슬러지 통합</text>
+          <text class="stat-callout" x="70" y="92" text-anchor="middle" fill="#fca5a5">최종 자원 회수</text>
+        </g>
+
+        <g class="node final" data-id="discharge" transform="translate(1230, 380)">
+          <rect class="node-bg" width="140" height="80" rx="8" stroke-width="2"/>
+          <text class="node-label" x="70" y="38">토출</text>
+          <text class="node-sublabel" x="70" y="58" style="font-weight:700;">ER + EDR</text>
+        </g>
+
+        <!-- ============ Core insight footer ============ -->
+        <g transform="translate(700, 625)">
+          <text x="0" y="0" text-anchor="middle" font-size="11" fill="#64748b" font-style="italic">
+            ⓘ 핵심: 해수와 민물이 직접 만나지 않음 → 염분 제거 공정 자체가 사라짐 · 모든 슬러지는 우측 비료화로 통합
+          </text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Side panel -->
+    <aside class="panel" id="panel">
+      <div class="panel-eyebrow">시스템 노드 정보</div>
+      <h2 id="p-title">노드를 선택하세요</h2>
+      <span class="panel-tag tag-junction" id="p-tag">대기 중</span>
+      <p class="desc" id="p-desc">
+        다이어그램의 노드(상자)를 클릭하면 해당 공정의 상세 설명, 운영 지표, 핵심 포인트가 여기에 표시됩니다.
+      </p>
+      <div class="specs" id="p-specs"></div>
+      <div class="tip" id="p-tip" style="display:none;"></div>
+    </aside>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4"></span>Loop-1: 해수 순환 (흰다리새우)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#10b981"></span>Loop-2: 민물 순환 (수경재배)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>최종 단계: 비료화 · 토출</div>
+    <div class="legend-item"><span class="legend-swatch dashed" style="color:#64748b"></span>외부 유입/유출</div>
+    <div class="legend-item" style="margin-left:auto; color:#64748b; font-style:italic;">애니메이션: 점선이 흐르는 방향 = 유체 이동 방향</div>
+  </div>
+</div>
+
+<script>
+  const nodeData = {
+    shrimp: {
+      title: "흰다리새우 양식조",
+      tag: "Loop-1 · 메인 생산",
+      tagClass: "tag-loop1",
+      desc: "해수(염도 30‰)를 유지하며 흰다리새우를 사육하는 메인 양식 시설. RAS(순환여과식) 방식으로 외부 해수 보충을 최소화하면서 시스템 내부에서 물을 정화·재사용합니다.",
+      specs: [
+        ["염도", "30‰"],
+        ["순환 방식", "RAS"],
+        ["역할", "메인 생산"],
+        ["배출 방향", "→ 고액분리"]
+      ]
+    },
+    separator: {
+      title: "고액분리 (드럼/짤순이)",
+      tag: "Junction · 핵심 분기점",
+      tagClass: "tag-junction",
+      desc: "양식조에서 나온 폐수를 두 갈래로 가르는 시스템의 핵심 장치. 드럼 필터나 짤순이 같은 단순한 물리적 분리만으로 깨끗한 상등수(70%)와 농축된 슬러지(30%)로 나눕니다.",
+      specs: [
+        ["상등수", "약 70% (30‰)"],
+        ["슬러지", "약 30% (~10‰)"],
+        ["에너지", "물리적 분리만"],
+        ["출력", "2분기 → Loop-1, Loop-2"]
+      ],
+      tip: "이 단순한 분리 한 번이 시스템 전체의 복잡도를 결정합니다."
+    },
+    supernatant: {
+      title: "상등수 (해수)",
+      tag: "Loop-1 · 자원 회수",
+      tagClass: "tag-loop1",
+      desc: "고액분리에서 위로 떠오른 깨끗한 물. 염도 30‰가 거의 그대로 유지되어 별도 처리 없이 해수 자원으로 직접 재사용 가능합니다. 전체 처리수의 약 70%를 차지합니다.",
+      specs: [
+        ["비율", "약 70%"],
+        ["염도", "30‰ (유지)"],
+        ["처리 단계", "→ 침전조 ①"],
+        ["최종 목적지", "양식조 복귀"]
+      ]
+    },
+    sediment1: {
+      title: "침전조 ① (해수용)",
+      tag: "Loop-1 · 수질 처리",
+      tagClass: "tag-loop1",
+      desc: "상등수를 양식조로 되돌려 보내기 전 수질을 다듬는 단계. DO 공급, 미생물 처리, UV 살균으로 새우 사육에 적합한 깨끗한 해수를 만듭니다. 처리 과정에서 발생한 슬러지는 비료화로 보내져 자원화됩니다.",
+      specs: [
+        ["DO 처리", "산소 공급"],
+        ["미생물", "유해균 제어"],
+        ["UV", "최종 살균"],
+        ["출력 ①", "청수 → 양식조 복귀"],
+        ["출력 ②", "슬러지 → 비료화"]
+      ]
+    },
+    sludge: {
+      title: "슬러지 (농축 폐수)",
+      tag: "Loop-1 · 자원 분기점",
+      tagClass: "tag-junction",
+      desc: "고액분리에서 가라앉은 농축물. 새우 분변과 사료 잔재로 영양분과 미네랄이 풍부합니다. 영양 자원으로 일부는 희석조(Loop-2)로 공급되고, 나머지는 농업 비료로 자원화됩니다.",
+      specs: [
+        ["비율", "약 30%"],
+        ["염도(추정)", "약 10‰"],
+        ["주요 성분", "유기물, 영양분, 미네랄"],
+        ["출력 ①", "→ 희석조 (영양 공급)"],
+        ["출력 ②", "→ 비료화 (자원 회수)"]
+      ],
+      tip: "동일한 슬러지가 액체 영양 자원과 고형 비료 자원으로 분리 활용되는 핵심 분기점."
+    },
+    dilution: {
+      title: "희석조",
+      tag: "Loop-2 · 영양액 조성",
+      tagClass: "tag-loop2",
+      desc: "고액분리 슬러지(영양분), 민물 배양액, 폐배양액 회수를 혼합해 베드로 보낼 영양액을 조성하는 조. 단순 희석만으로 염도를 0 수준까지 떨어뜨리며 EDR 같은 탈염 공정이 불필요합니다.",
+      specs: [
+        ["입력 ①", "슬러지 (~10‰, 영양원)"],
+        ["입력 ②", "민물 배양액 (신규)"],
+        ["입력 ③", "폐배양액 회수"],
+        ["출력 염도", "≈ 0‰ (민물)"],
+        ["탈염 에너지", "0 kWh"]
+      ],
+      tip: "Loop-1의 영양분이 Loop-2의 자원이 되는 핵심 전환점."
+    },
+    sediment2: {
+      title: "침전조 ② (민물용)",
+      tag: "Loop-2 · 영양분 가용화",
+      tagClass: "tag-loop2",
+      desc: "DO 공급과 미생물 처리로 유기물을 분해하고 영양분을 작물이 흡수 가능한 형태(질산염 등)로 가용화합니다. 동시에 2차 고액분리를 수행해 청수와 슬러지로 분리합니다.",
+      specs: [
+        ["DO·미생물", "유기물 분해"],
+        ["산물", "질산염 형성"],
+        ["출력 ①", "청수 → 수경재배 베드 ①"],
+        ["출력 ②", "슬러지 → 비료화"]
+      ]
+    },
+    hydro: {
+      title: "수경재배 베드 (4단)",
+      tag: "Loop-2 · 작물 생산",
+      tagClass: "tag-loop2",
+      desc: "민물 + 가용화된 영양분으로 작물을 재배하는 다층 베드. 새우 양식의 부산물이 그대로 작물의 양분이 되는 완전 순환형 농업의 핵심 출력 구간입니다.",
+      specs: [
+        ["수원", "민물 (염도 ≈ 0)"],
+        ["영양 공급", "새우 분변 유래"],
+        ["베드 구조", "4단 다층"],
+        ["폐배양액", "→ 시스템 재투입"]
+      ]
+    },
+    hydro2: {
+      title: "작물 재배 구간",
+      tag: "Loop-2 · 작물 생산",
+      tagClass: "tag-loop2",
+      desc: "엽채류, 허브 등 민물 환경에서 빠르게 성장하는 작물을 재배. 안정적인 영양액 공급으로 균일한 품질의 작물 생산이 가능합니다.",
+      specs: [
+        ["적합 작물", "엽채류, 허브"],
+        ["성장 환경", "민물 + 영양액"],
+        ["관리 포인트", "EC, pH 모니터링"]
+      ]
+    },
+    hydro3: {
+      title: "베드 순환 시스템",
+      tag: "Loop-2 · 작물 생산",
+      tagClass: "tag-loop2",
+      desc: "4단 다층 베드를 통해 공간 효율을 극대화. 베드 간 순환으로 영양액이 고르게 공급되고, 작물 단계별 분리 재배가 가능합니다.",
+      specs: [
+        ["구조", "4단 수직 배치"],
+        ["공간 효율", "단위 면적당 4배"],
+        ["순환", "베드 간 연속 흐름"]
+      ]
+    },
+    hydro4: {
+      title: "폐배양액 회수",
+      tag: "Loop-2 · 자원 재투입",
+      tagClass: "tag-loop2",
+      desc: "수경재배 후 남은 폐배양액을 시스템으로 다시 돌려보냅니다. 민물 자원이 계속 순환되어 외부 보충은 최소화됩니다.",
+      specs: [
+        ["회수 대상", "수경재배 폐액"],
+        ["재투입 위치", "희석조"],
+        ["외부 보충", "최소화"]
+      ]
+    },
+    fertilizer: {
+      title: "비료화 (3-입력 통합)",
+      tag: "최종 단계 · 자원 회수",
+      tagClass: "tag-final",
+      desc: "시스템의 모든 슬러지가 모이는 통합 자원 회수 지점. 침전조①(Loop-1 수질 처리), 고액분리(Loop-1 메인 분기), 침전조②(Loop-2 민물 처리)에서 발생한 슬러지를 합쳐 농업용 비료로 자원화합니다.",
+      specs: [
+        ["원료 ①", "침전조① 슬러지 (Loop-1)"],
+        ["원료 ②", "고액분리 슬러지 (Loop-1)"],
+        ["원료 ③", "침전조② 슬러지 (Loop-2)"],
+        ["주요 성분", "유기물, 미네랄, 질소"],
+        ["용도", "농업용 비료"],
+        ["가치", "폐기물 → 자원"]
+      ],
+      tip: "시스템 내 모든 슬러지의 통합 자원 회수 지점."
+    },
+    seaIn: {
+      title: "신규 유입 해수",
+      tag: "외부 자원 (보충)",
+      tagClass: "tag-external",
+      desc: "RAS 방식으로 대부분의 물을 재활용하지만, 증발과 일부 손실분을 채우기 위해 소량의 신규 해수를 보충합니다. 기존 양식장 대비 사용량 대폭 절감.",
+      specs: [
+        ["역할", "손실분 보충"],
+        ["사용량", "최소 수준"],
+        ["주입 위치", "양식조"]
+      ]
+    },
+    freshIn: {
+      title: "신규 유입 민물 배양액",
+      tag: "외부 자원 (보충)",
+      tagClass: "tag-external",
+      desc: "희석조에 공급되는 민물 배양액. 슬러지 희석과 작물 영양분 공급의 핵심 매개체이며 미생물 컬리버 제품을 활용할 수 있는 지점.",
+      specs: [
+        ["역할", "희석 + 영양 공급"],
+        ["주입 위치", "희석조"],
+        ["연계", "컬리버 미생물 제품"]
+      ]
+    },
+    discharge: {
+      title: "토출 (ER + EDR)",
+      tag: "최종 단계 · 페이퍼상 스펙",
+      tagClass: "tag-final",
+      desc: "기술 페이퍼와 마케팅 자료에는 ER(전기투석)과 EDR을 옵션 기술로 명시. 그러나 듀얼 루프 분리 설계로 실제 운영에서는 사용되지 않습니다. 미래 확장성 또는 폐수 처리 인증용으로 보유.",
+      specs: [
+        ["페이퍼 명시", "ER + EDR"],
+        ["실제 가동", "거의 불필요"],
+        ["역할", "스펙시트 · 인증"]
+      ],
+      tip: "\"보여줄 땐 고차원 기술, 운영할 땐 단순한 자연 순환\""
+    }
+  };
+
+  // Click handler
+  const panel = document.getElementById('panel');
+  const elTitle = document.getElementById('p-title');
+  const elTag = document.getElementById('p-tag');
+  const elDesc = document.getElementById('p-desc');
+  const elSpecs = document.getElementById('p-specs');
+  const elTip = document.getElementById('p-tip');
+
+  let selectedNode = null;
+
+  document.querySelectorAll('.node').forEach(node => {
+    node.addEventListener('click', () => {
+      const id = node.dataset.id;
+      const data = nodeData[id];
+      if (!data) return;
+
+      if (selectedNode) selectedNode.classList.remove('selected');
+      node.classList.add('selected');
+      selectedNode = node;
+
+      elTitle.textContent = data.title;
+      elTag.textContent = data.tag;
+      elTag.className = 'panel-tag ' + data.tagClass;
+      elDesc.textContent = data.desc;
+
+      elSpecs.innerHTML = '';
+      data.specs.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'spec-row';
+        row.innerHTML = '<span class="spec-label">' + label + '</span><span class="spec-value">' + value + '</span>';
+        elSpecs.appendChild(row);
+      });
+
+      if (data.tip) {
+        elTip.textContent = '💡 ' + data.tip;
+        elTip.style.display = 'block';
+      } else {
+        elTip.style.display = 'none';
+      }
+    });
+  });
+
+  // Filter toggle
+  const card = document.getElementById('diagramCard');
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active', 'all', 'loop1', 'loop2');
+      });
+      btn.classList.add('active', mode);
+      card.className = 'diagram-card mode-' + mode;
+    });
+  });
+
+  // Auto-select separator on load to show how the panel works
+  setTimeout(() => {
+    const initial = document.querySelector('[data-id="separator"]');
+    if (initial) initial.dispatchEvent(new Event('click'));
+  }, 600);
+
+  // ========== Theme toggle ==========
+  const themeToggle = document.getElementById('themeToggle');
+  function applyTheme(isLight) {
+    if (isLight) {
+      document.body.classList.add('light');
+      themeToggle.textContent = '🌙 다크';
+    } else {
+      document.body.classList.remove('light');
+      themeToggle.textContent = '☀️ 라이트';
+    }
+  }
+  // 저장된 테마 적용 (없으면 다크가 기본)
+  try {
+    const saved = localStorage.getItem('culiver-theme');
+    if (saved === 'light') applyTheme(true);
+  } catch (e) { /* localStorage unavailable - silently ignore */ }
+
+  themeToggle.addEventListener('click', () => {
+    const willBeLight = !document.body.classList.contains('light');
+    applyTheme(willBeLight);
+    try {
+      localStorage.setItem('culiver-theme', willBeLight ? 'light' : 'dark');
+    } catch (e) { /* ignore */ }
+  });
+</script>
+</body>
+</html>
