@@ -412,7 +412,7 @@
   <div class="main-grid">
     <div class="diagram-card" id="diagramCard">
       <div class="hint">노드를 클릭해보세요 →</div>
-      <svg class="diagram" viewBox="0 0 1400 660" xmlns="http://www.w3.org/2000/svg">
+      <svg class="diagram" viewBox="-180 0 1580 660" xmlns="http://www.w3.org/2000/svg">
         <!-- Background grid pattern -->
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -434,7 +434,7 @@
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
           </marker>
         </defs>
-        <rect width="1400" height="660" fill="url(#grid)"/>
+        <rect x="-180" width="1580" height="660" fill="url(#grid)"/>
 
         <!-- ============ LOOP-2 BADGE (top-left) ============ -->
         <g transform="translate(50, 25)">
@@ -492,14 +492,14 @@
         <path class="flow loop2 loop2-only" d="M 1045 110 L 1045 70 L 150 70 L 150 110" marker-end="url(#arrow-loop2)"/>
         <text class="pipe-label loop2-only" x="597" y="63" text-anchor="middle">폐배양액 회수 → 희석조 환류</text>
 
-        <!-- 신규 유입 민물 배양액 (희석조 아래, 약간 더 내림) -->
-        <g class="node external loop2-only" data-id="freshIn" transform="translate(70, 250)">
-          <rect class="node-bg" width="160" height="45" rx="8" stroke-width="1.5"/>
-          <text class="node-label" x="80" y="20" fill="#cbd5e1">신규 유입: 민물 배양액</text>
-          <text class="node-sublabel" x="80" y="36">보충용 소량</text>
+        <!-- 신규 유입 민물 배양액 (희석조 왼쪽 옆) -->
+        <g class="node external loop2-only" data-id="freshIn" transform="translate(-170, 122)">
+          <rect class="node-bg" width="150" height="46" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="75" y="20" fill="#cbd5e1">신규 유입:</text>
+          <text class="node-sublabel" x="75" y="36">민물 배양액</text>
         </g>
-        <!-- 신규 유입 민물 → 희석조 바닥 우측 진입 -->
-        <path class="flow external loop2-only" d="M 180 250 L 180 180" marker-end="url(#arrow-external)"/>
+        <!-- 신규 유입 민물 → 희석조 좌측으로 진입 -->
+        <path class="flow external loop2-only" d="M -20 145 L 68 145" marker-end="url(#arrow-external)"/>
 
         <!-- ============ SLUDGE BOX (center, y=290-345) ============ -->
         <g class="node junction" data-id="sludge" transform="translate(310, 290)">
@@ -511,17 +511,17 @@
         <!-- 고액분리 → 슬러지 (Loop-1 row 위로) -->
         <path class="flow loop1 loop1-only" d="M 395 400 L 395 345" marker-end="url(#arrow-loop2)"/>
 
-        <!-- 슬러지 → 희석조 (희석조 바닥 좌측에서 진입 - 변경됨) -->
-        <path class="flow loop2 loop2-only" d="M 310 317 L 250 317 L 250 200 L 120 200 L 120 180" marker-end="url(#arrow-loop2)"/>
-        <text class="pipe-label loop2-only" x="262" y="260">슬러지 →<tspan x="262" dy="14">희석조 (영양)</tspan></text>
+        <!-- 슬러지 → 희석조 ('ㄴ' 모양: 좌측으로 → 위로, 한 번 꺾임) -->
+        <path class="flow loop2 loop2-only" d="M 310 317 L 150 317 L 150 180" marker-end="url(#arrow-loop2)"/>
+        <text class="pipe-label loop2-only" x="160" y="240">슬러지 →<tspan x="160" dy="14">희석조 (영양)</tspan></text>
 
         <!-- 슬러지 → 비료화 (우측 길게, 최종) -->
         <path class="flow final" d="M 480 317 L 1200 317 L 1200 290 L 1230 290" marker-end="url(#arrow-final)"/>
         <text class="pipe-label" x="810" y="310" text-anchor="middle" fill="#fca5a5">슬러지 → 비료화</text>
 
         <!-- 침전조② → 비료화 (Loop-2 슬러지, 위쪽 우측) -->
-        <path class="flow final" d="M 340 180 L 340 220 L 1180 220 L 1180 250 L 1230 250" marker-end="url(#arrow-final)"/>
-        <text class="pipe-label" x="750" y="213" text-anchor="middle" fill="#fca5a5">침전조② 슬러지 → 비료화</text>
+        <path class="flow final loop2-only" d="M 340 180 L 340 220 L 1180 220 L 1180 250 L 1230 250" marker-end="url(#arrow-final)"/>
+        <text class="pipe-label loop2-only" x="750" y="213" text-anchor="middle" fill="#fca5a5">침전조② 슬러지 → 비료화</text>
 
         <!-- ============ LOOP-1 ROW (y=400-500) ============ -->
         <g class="node loop1 loop1-only" data-id="shrimp" transform="translate(70, 400)">
@@ -557,24 +557,24 @@
         <path class="flow loop1 loop1-only" d="M 480 450 L 510 450" marker-end="url(#arrow-loop1)"/>
         <path class="flow loop1 loop1-only" d="M 680 450 L 710 450" marker-end="url(#arrow-loop1)"/>
 
-        <!-- Loop-1 환류: 침전조① → 양식조 (위로 곡선, y=380) -->
-        <path class="flow loop1 loop1-only" d="M 795 400 L 795 380 L 175 380 L 175 400" marker-end="url(#arrow-loop1)"/>
-        <text class="pipe-label loop1-only" x="485" y="373" text-anchor="middle" fill="#67e8f9">해수 순환 (Loop-1)</text>
+        <!-- Loop-1 환류: 침전조① → 양식조 (아래로 큰 곡선, y=525) -->
+        <path class="flow loop1 loop1-only" d="M 795 500 L 795 525 L 175 525 L 175 500" marker-end="url(#arrow-loop1)"/>
+        <text class="pipe-label loop1-only" x="485" y="542" text-anchor="middle" fill="#67e8f9">해수 순환 (Loop-1)</text>
 
         <!-- 침전조① → 비료화 (Loop-1 슬러지, 아래쪽 우측 진입) -->
-        <path class="flow final" d="M 880 450 L 1110 450 L 1110 330 L 1230 330" marker-end="url(#arrow-final)"/>
-        <text class="pipe-label" x="995" y="443" text-anchor="middle" fill="#fca5a5">침전조① 슬러지 → 비료화</text>
+        <path class="flow final loop1-only" d="M 880 450 L 1110 450 L 1110 330 L 1230 330" marker-end="url(#arrow-final)"/>
+        <text class="pipe-label loop1-only" x="995" y="443" text-anchor="middle" fill="#fca5a5">침전조① 슬러지 → 비료화</text>
 
-        <!-- 신규 유입 해수 (양식조 아래) -->
-        <g class="node external loop1-only" data-id="seaIn" transform="translate(70, 525)">
-          <rect class="node-bg" width="210" height="45" rx="8" stroke-width="1.5"/>
-          <text class="node-label" x="105" y="20" fill="#cbd5e1">신규 유입 해수</text>
-          <text class="node-sublabel" x="105" y="36">보충용 소량 (외부)</text>
+        <!-- 신규 유입 해수 (양식조 왼쪽 옆) -->
+        <g class="node external loop1-only" data-id="seaIn" transform="translate(-170, 425)">
+          <rect class="node-bg" width="150" height="50" rx="8" stroke-width="1.5"/>
+          <text class="node-label" x="75" y="22" fill="#cbd5e1">신규 유입 해수</text>
+          <text class="node-sublabel" x="75" y="38">보충용 소량 (외부)</text>
         </g>
-        <path class="flow external loop1-only" d="M 175 525 L 175 500" marker-end="url(#arrow-external)"/>
+        <path class="flow external loop1-only" d="M -20 450 L 68 450" marker-end="url(#arrow-external)"/>
 
-        <!-- ============ LOOP-1 BADGE (next to 신규유입해수) ============ -->
-        <g transform="translate(310, 535)">
+        <!-- ============ LOOP-1 BADGE (환류 라인 아래 배치) ============ -->
+        <g transform="translate(310, 560)">
           <rect width="140" height="32" rx="16" fill="rgba(6,182,212,0.18)" stroke="#06b6d4" stroke-width="1.8"/>
           <text x="70" y="21" text-anchor="middle" class="loop-badge" fill="#67e8f9">LOOP—1 해수</text>
         </g>
@@ -801,15 +801,16 @@
     },
     discharge: {
       title: "토출 (ER + EDR)",
-      tag: "최종 단계 · 페이퍼상 스펙",
+      tag: "최종 단계 · 옵션 정화",
       tagClass: "tag-final",
-      desc: "기술 페이퍼와 마케팅 자료에는 ER(전기투석)과 EDR을 옵션 기술로 명시. 그러나 듀얼 루프 분리 설계로 실제 운영에서는 사용되지 않습니다. 미래 확장성 또는 폐수 처리 인증용으로 보유.",
+      desc: "폐수 처리 인증 대응 및 비상 시 안전망을 위한 옵션 정화 단계. ER(전기투석)·EDR을 통해 잔류 염분과 미세 오염 물질을 추가 제거할 수 있도록 설계되어 있으며, 듀얼 루프 분리 구조 덕분에 일반 운영에서는 최소 가동만으로 충분합니다.",
       specs: [
-        ["페이퍼 명시", "ER + EDR"],
-        ["실제 가동", "거의 불필요"],
-        ["역할", "스펙시트 · 인증"]
+        ["적용 기술", "ER · EDR (전기투석)"],
+        ["일반 운영", "최소 가동"],
+        ["역할", "인증 대응 · 비상 안전망"],
+        ["가치", "확장성 · 규제 적합성"]
       ],
-      tip: "\"보여줄 땐 고차원 기술, 운영할 땐 단순한 자연 순환\""
+      tip: "폐수 인증과 비상 대응을 동시에 확보하는 옵션 정화 단계."
     }
   };
 
