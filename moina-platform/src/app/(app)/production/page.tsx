@@ -4,54 +4,106 @@ import { useState } from 'react';
 import { mockBatches } from '@/lib/mockData';
 import { ProductionBatch } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
-import { Package, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function ProductionPage() {
-  const [filter, setFilter] = useState<'all'|'ongoing'|'completed'|'failed'>('all');
-  const [detail, setDetail] = useState<ProductionBatch|null>(null);
-  const filtered = filter==='all' ? mockBatches : mockBatches.filter(b => b.status===filter);
-  const total = { ongoing: mockBatches.filter(b=>b.status==='ongoing').length, completed: mockBatches.filter(b=>b.status==='completed').length, failed: mockBatches.filter(b=>b.status==='failed').length };
-  const totalKg = mockBatches.filter(b=>b.status==='completed').reduce((s,b)=>s+(b.actualKg??0),0);
+  const [filter, setFilter] = useState<'all' | 'ongoing' | 'completed' | 'failed'>('all');
+  const [detail, setDetail] = useState<ProductionBatch | null>(null);
+  const filtered = filter === 'all' ? mockBatches : mockBatches.filter(b => b.status === filter);
+
+  const stats = {
+    ongoing:   mockBatches.filter(b => b.status === 'ongoing').length,
+    completed: mockBatches.filter(b => b.status === 'completed').length,
+    failed:    mockBatches.filter(b => b.status === 'failed').length,
+    totalKg:   mockBatches.filter(b => b.status === 'completed').reduce((s, b) => s + (b.actualKg ?? 0), 0),
+  };
 
   return (
-    <div className="p-6 space-y-6 overflow-y-auto">
-      <div><h1 className="text-xl font-bold text-slate-800">생산·품질 관리</h1><p className="text-sm text-slate-500 mt-0.5">모이나 생산 배치 현황 및 품질 분석 결과</p></div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SC icon={<Package className="w-5 h-5 text-blue-600"/>} label="진행 중" value={total.ongoing} color="blue" />
-        <SC icon={<CheckCircle className="w-5 h-5 text-teal-600"/>} label="완료" value={total.completed} color="teal" />
-        <SC icon={<XCircle className="w-5 h-5 text-red-600"/>} label="실패" value={total.failed} color="red" />
-        <SC icon={<AlertCircle className="w-5 h-5 text-slate-600"/>} label="완료 생산량 합계" value={`${totalKg.toLocaleString()}kg`} color="slate" />
+    <div style={{ padding: '28px 32px', overflowY: 'auto', flex: 1 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-1)', margin: 0, letterSpacing: '-0.02em' }}>생산·품질 관리</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '4px 0 0' }}>모이나 생산 배치 현황 및 DHA/EPA 분석, 안전성 검사 결과</p>
       </div>
-      <div className="flex gap-2">
-        {(['all','ongoing','completed','failed'] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${filter===f?'bg-teal-600 text-white':'bg-white text-slate-600 border border-slate-200 hover:border-teal-300'}`}>
-            {f==='all'?'전체':f==='ongoing'?'진행 중':f==='completed'?'완료':'실패'}
+
+      {/* 요약 카드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+        {[
+          { label: '진행 중 배치', value: stats.ongoing, color: '#3B82F6', bg: '#EFF6FF' },
+          { label: '완료 배치',   value: stats.completed, color: 'var(--success)', bg: 'var(--success-bg)' },
+          { label: '실패 배치',   value: stats.failed,   color: 'var(--danger)',  bg: 'var(--danger-bg)' },
+          { label: '완료 총 생산량', value: `${stats.totalKg.toLocaleString()} kg`, color: 'var(--text-1)', bg: 'var(--bg)' },
+        ].map(s => (
+          <div key={s.label} className="card" style={{ padding: '16px 20px' }}>
+            <div className="metric-label" style={{ marginBottom: 8 }}>{s.label}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 26, fontWeight: 700, color: s.color }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 필터 탭 */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+        {(['all', 'ongoing', 'completed', 'failed'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: '6px 16px',
+            borderRadius: 999,
+            border: filter === f ? 'none' : '1px solid var(--border)',
+            background: filter === f ? 'var(--mint)' : 'var(--surface)',
+            color: filter === f ? '#fff' : 'var(--text-2)',
+            fontSize: 12, fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-sans)',
+            transition: 'all 0.15s',
+          }}>
+            {f === 'all' ? '전체' : f === 'ongoing' ? '진행 중' : f === 'completed' ? '완료' : '실패'}
           </button>
         ))}
       </div>
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>{['배치번호','제품','시작일','종료일','상태','목표(kg)','실적(kg)','달성률','품질','상세'].map(h=><th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-600">{h}</th>)}</tr>
+
+      {/* 테이블 */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="data-table" style={{ minWidth: 820 }}>
+            <thead>
+              <tr>
+                {['배치번호', '제품', '시작일', '종료일', '상태', '목표', '실적', '달성률', '품질', ''].map(h => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {filtered.map(batch => {
-                const pct = batch.actualKg&&batch.targetKg ? Math.round((batch.actualKg/batch.targetKg)*100) : null;
-                const qPass = batch.heavyMetal==='pass'&&batch.pathogen==='pass';
-                const qFail = batch.heavyMetal==='fail'||batch.pathogen==='fail';
+                const pct = batch.actualKg && batch.targetKg ? Math.round((batch.actualKg / batch.targetKg) * 100) : null;
+                const pctColor = pct == null ? 'var(--text-3)' : pct >= 90 ? 'var(--success)' : pct >= 70 ? 'var(--warning)' : 'var(--danger)';
+                const qPass = batch.heavyMetal === 'pass' && batch.pathogen === 'pass';
+                const qFail = batch.heavyMetal === 'fail' || batch.pathogen === 'fail';
+
                 return (
-                  <tr key={batch.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{batch.batchNo}</td>
-                    <td className="px-4 py-3 text-slate-700">{batch.product}</td>
-                    <td className="px-4 py-3 text-slate-500">{batch.startDate}</td>
-                    <td className="px-4 py-3 text-slate-500">{batch.endDate??'-'}</td>
-                    <td className="px-4 py-3"><StatusBadge variant={batch.status} size="sm" /></td>
-                    <td className="px-4 py-3 text-right">{batch.targetKg.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">{batch.actualKg?.toLocaleString()??'-'}</td>
-                    <td className="px-4 py-3 text-right">{pct!=null?<span className={`font-semibold ${pct>=90?'text-teal-600':pct>=70?'text-amber-600':'text-red-600'}`}>{pct}%</span>:'-'}</td>
-                    <td className="px-4 py-3">{qPass?<span className="text-teal-600 text-xs font-medium">합격</span>:qFail?<span className="text-red-600 text-xs font-medium">불합격</span>:<span className="text-slate-400 text-xs">검사 중</span>}</td>
-                    <td className="px-4 py-3"><button onClick={() => setDetail(batch)} className="text-teal-600 text-xs hover:underline">보기</button></td>
+                  <tr key={batch.id}>
+                    <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>{batch.batchNo}</span></td>
+                    <td style={{ fontWeight: 500, color: 'var(--text-1)' }}>{batch.product}</td>
+                    <td>{batch.startDate}</td>
+                    <td>{batch.endDate ?? '—'}</td>
+                    <td><StatusBadge variant={batch.status} size="sm" /></td>
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{batch.targetKg.toLocaleString()}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{batch.actualKg?.toLocaleString() ?? '—'}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {pct != null
+                        ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: pctColor }}>{pct}%</span>
+                        : '—'}
+                    </td>
+                    <td>
+                      {qPass ? <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>합격</span>
+                        : qFail ? <span style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 600 }}>불합격</span>
+                        : <span style={{ color: 'var(--text-3)', fontSize: 12 }}>검사 중</span>}
+                    </td>
+                    <td>
+                      <button onClick={() => setDetail(batch)} style={{
+                        background: 'var(--mint-light)', color: 'var(--mint)',
+                        border: 'none', borderRadius: 6, padding: '3px 10px',
+                        fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        fontFamily: 'var(--font-sans)',
+                      }}>상세</button>
+                    </td>
                   </tr>
                 );
               })}
@@ -59,23 +111,63 @@ export default function ProductionPage() {
           </table>
         </div>
       </div>
+
+      {/* 모달 */}
       {detail && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setDetail(null)}>
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={e=>e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-4"><div><h3 className="font-bold text-slate-800">{detail.batchNo}</h3><p className="text-sm text-slate-500">{detail.product}</p></div><StatusBadge variant={detail.status} /></div>
-            <div className="space-y-3 text-sm">
-              <R label="담당자" value={detail.manager} />
-              <R label="시작일" value={detail.startDate} />
-              <R label="종료일" value={detail.endDate??'-'} />
-              <R label="목표 생산량" value={`${detail.targetKg.toLocaleString()} kg`} />
-              <R label="실제 생산량" value={detail.actualKg?`${detail.actualKg.toLocaleString()} kg`:'-'} />
-              {detail.dha&&<R label="DHA 함량" value={`${detail.dha}%`} />}
-              {detail.epa&&<R label="EPA 함량" value={`${detail.epa}%`} />}
-              {detail.protein&&<R label="단백질 함량" value={`${detail.protein}%`} />}
-              <R label="중금속 검사" value={detail.heavyMetal??'-'} badge />
-              <R label="병원균 검사" value={detail.pathogen??'-'} badge />
+        <div onClick={() => setDetail(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          backdropFilter: 'blur(2px)',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--surface)',
+            borderRadius: 'var(--r-xl)',
+            padding: 28,
+            maxWidth: 420, width: '100%', margin: 16,
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>{detail.batchNo}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>{detail.product}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <StatusBadge variant={detail.status} />
+                <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 0, display: 'flex' }}>
+                  <X size={18} />
+                </button>
+              </div>
             </div>
-            <button onClick={() => setDetail(null)} className="mt-5 w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium">닫기</button>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              {[
+                { label: '담당자', value: detail.manager },
+                { label: '시작일', value: detail.startDate },
+                { label: '목표 생산량', value: `${detail.targetKg.toLocaleString()} kg` },
+                { label: '실제 생산량', value: detail.actualKg ? `${detail.actualKg.toLocaleString()} kg` : '—' },
+              ].map(r => (
+                <div key={r.label} style={{ background: 'var(--bg)', borderRadius: 'var(--r-md)', padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 2 }}>{r.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)', fontFamily: 'var(--font-mono)' }}>{r.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {(detail.dha || detail.epa || detail.protein) && (
+              <div style={{ background: 'var(--mint-light)', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--mint)', marginBottom: 8, letterSpacing: '0.05em' }}>영양 분석</div>
+                <div style={{ display: 'flex', gap: 20 }}>
+                  {detail.dha && <NutrientStat label="DHA" value={`${detail.dha}%`} />}
+                  {detail.epa && <NutrientStat label="EPA" value={`${detail.epa}%`} />}
+                  {detail.protein && <NutrientStat label="단백질" value={`${detail.protein}%`} />}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <QualityRow label="중금속 검사" val={detail.heavyMetal} />
+              <QualityRow label="병원균 검사" val={detail.pathogen} />
+            </div>
           </div>
         </div>
       )}
@@ -83,11 +175,24 @@ export default function ProductionPage() {
   );
 }
 
-function SC({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string|number; color: string }) {
-  const bg: Record<string,string> = { blue:'bg-blue-50 border-blue-100', teal:'bg-teal-50 border-teal-100', red:'bg-red-50 border-red-100', slate:'bg-slate-50 border-slate-200' };
-  return <div className={`rounded-xl border p-4 ${bg[color]}`}><div className="flex items-center gap-2 mb-1">{icon}<span className="text-xs text-slate-600">{label}</span></div><p className="text-2xl font-bold text-slate-800">{value}</p></div>;
+function NutrientStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: 'var(--mint)', fontWeight: 600 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: 'var(--mint-dark)' }}>{value}</div>
+    </div>
+  );
 }
 
-function R({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
-  return <div className="flex justify-between"><span className="text-slate-500">{label}</span>{badge?<StatusBadge variant={value} size="sm" />:<span className="font-medium text-slate-700">{value}</span>}</div>;
+function QualityRow({ label, val }: { label: string; val?: string }) {
+  const isPass = val === 'pass';
+  const isFail = val === 'fail';
+  return (
+    <div style={{ background: isPass ? 'var(--success-bg)' : isFail ? 'var(--danger-bg)' : 'var(--bg)', borderRadius: 'var(--r-md)', padding: '10px 12px' }}>
+      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: isPass ? 'var(--success)' : isFail ? 'var(--danger)' : 'var(--text-3)' }}>
+        {val === 'pass' ? '✓ 합격' : val === 'fail' ? '✗ 불합격' : '검사 중'}
+      </div>
+    </div>
+  );
 }

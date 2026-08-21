@@ -1,84 +1,138 @@
 'use client';
 
 import { mockKpiTargets } from '@/lib/mockData';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
-import { Target, TrendingUp, TrendingDown } from 'lucide-react';
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Cell } from 'recharts';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function KpiPage() {
-  const radarData = mockKpiTargets.map(k => ({ subject: k.label, '달성': Math.round((k.actual/k.target2026)*100), '목표': 100 }));
-  const barData = mockKpiTargets.map(k => ({ label: k.label, '2026 목표': k.target2026, '2026 실적': k.actual, '2027 목표': k.target2027 }));
+  const radarData = mockKpiTargets.map(k => ({
+    subject: k.label,
+    '달성': Math.round((k.actual / k.target2026) * 100),
+    '목표': 100,
+  }));
+
+  const year = 2026;
 
   return (
-    <div className="p-6 space-y-6 overflow-y-auto">
-      <div><h1 className="text-xl font-bold text-slate-800">KPI 달성 현황</h1><p className="text-sm text-slate-500 mt-0.5">민간투자기반 유망기업 사업화 지원사업 핵심 성과 지표 · 2026년 기준</p></div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div style={{ padding: '28px 32px', overflowY: 'auto', flex: 1 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-1)', margin: 0, letterSpacing: '-0.02em' }}>KPI 달성 현황</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '4px 0 0' }}>민간투자기반 유망기업 사업화 지원사업 핵심 성과 지표 · {year}년 기준</p>
+      </div>
+
+      {/* KPI 카드 그리드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         {mockKpiTargets.map(k => {
-          const pct = Math.min(100, Math.round((k.actual/k.target2026)*100));
-          const on = pct>=70;
+          const pct = Math.min(100, Math.round((k.actual / k.target2026) * 100));
+          const barColor = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+          const isGood = pct >= 70;
+
           return (
-            <div key={k.label} className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex justify-between items-start mb-3">
-                <div><p className="font-semibold text-slate-800">{k.label}</p><p className="text-xs text-slate-500">단위: {k.unit}</p></div>
-                {on?<TrendingUp className="w-5 h-5 text-teal-500"/>:<TrendingDown className="w-5 h-5 text-red-400"/>}
+            <div key={k.label} className="card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{k.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>단위: {k.unit}</div>
+                </div>
+                {isGood
+                  ? <TrendingUp size={18} color="var(--success)" />
+                  : <TrendingDown size={18} color="var(--danger)" />}
               </div>
-              <div className="flex items-end gap-2 mb-3">
-                <span className="text-3xl font-bold text-slate-800">{k.actual}</span>
-                <span className="text-sm text-slate-500 mb-1">{k.unit}</span>
-                <span className={`ml-auto text-sm font-bold ${on?'text-teal-600':'text-red-500'}`}>{pct}%</span>
+
+              {/* 큰 숫자 */}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.03em' }}>
+                  {k.actual}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{k.unit}</span>
+                <span style={{
+                  marginLeft: 'auto',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: barColor,
+                }}>{pct}%</span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
-                <div className={`h-full rounded-full ${pct>=80?'bg-teal-500':pct>=50?'bg-amber-400':'bg-red-400'}`} style={{width:`${pct}%`}} />
+
+              {/* 진행 바 */}
+              <div className="progress-track" style={{ marginBottom: 14 }}>
+                <div className="progress-fill" style={{ width: `${pct}%`, background: barColor }} />
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-slate-50 rounded-lg p-2"><p className="text-slate-400">2026 목표</p><p className="font-semibold text-slate-700">{k.target2026} {k.unit}</p></div>
-                <div className="bg-teal-50 rounded-lg p-2"><p className="text-teal-400">2027 목표</p><p className="font-semibold text-teal-700">{k.target2027} {k.unit}</p></div>
+
+              {/* 목표 비교 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{ background: 'var(--bg)', borderRadius: 'var(--r-sm)', padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 2, fontWeight: 600, letterSpacing: '0.04em' }}>2026 목표</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--text-2)' }}>{k.target2026}<span style={{ fontSize: 10, fontWeight: 400 }}> {k.unit}</span></div>
+                </div>
+                <div style={{ background: 'var(--mint-light)', borderRadius: 'var(--r-sm)', padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--mint-dark)', marginBottom: 2, fontWeight: 600, letterSpacing: '0.04em' }}>2027 목표</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--mint-dark)' }}>{k.target2027}<span style={{ fontSize: 10, fontWeight: 400 }}> {k.unit}</span></div>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <div className="flex items-center gap-2 mb-4"><Target className="w-4 h-4 text-teal-600"/><h3 className="text-sm font-semibold text-slate-700">KPI 달성률 종합 (목표 대비 %)</h3></div>
-        <ResponsiveContainer width="100%" height={300}>
-          <RadarChart data={radarData}>
-            <PolarGrid />
-            <PolarAngleAxis dataKey="subject" tick={{fontSize:11}} />
-            <Radar name="달성률" dataKey="달성" stroke="#0d9488" fill="#0d9488" fillOpacity={0.25} />
-            <Radar name="목표" dataKey="목표" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.08} strokeDasharray="4 4" />
-            <Legend />
-            <Tooltip formatter={(v) => [`${v}%`]} />
-          </RadarChart>
-        </ResponsiveContainer>
+
+      {/* 차트 2열 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>KPI 달성률 종합 (%)</div>
+          <ResponsiveContainer width="100%" height={240}>
+            <RadarChart data={radarData} margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
+              <PolarGrid stroke="var(--border)" />
+              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: 'var(--text-3)' }} />
+              <Radar name="달성률" dataKey="달성" stroke="var(--mint)" fill="var(--mint)" fillOpacity={0.2} strokeWidth={2} />
+              <Radar name="목표" dataKey="목표" stroke="var(--border)" fill="none" strokeDasharray="4 4" />
+              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }} formatter={(v) => [`${v}%`]} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>목표·실적 비교</div>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={mockKpiTargets.map(k => ({ label: k.label, '2026목표': k.target2026, '실적': k.actual, '2027목표': k.target2027 }))} barGap={3} margin={{ left: -20, right: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9, fill: 'var(--text-3)' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="실적" fill="var(--mint)" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="2026목표" fill="var(--border)" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="2027목표" fill="var(--info-bg)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">연도별 목표·실적 비교</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={barData} barGap={4}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="label" tick={{fontSize:11}} />
-            <YAxis tick={{fontSize:10}} />
-            <Tooltip /><Legend />
-            <Bar dataKey="2026 실적" fill="#0d9488" radius={[4,4,0,0]} />
-            <Bar dataKey="2026 목표" fill="#99f6e4" radius={[4,4,0,0]} />
-            <Bar dataKey="2027 목표" fill="#7dd3fc" radius={[4,4,0,0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200"><tr>{['지표','단위','2026 목표','2027 목표','2026 실적','달성률','평가'].map(h=><th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-600">{h}</th>)}</tr></thead>
-          <tbody className="divide-y divide-slate-100">
+
+      {/* 상세 테이블 */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <table className="data-table">
+          <thead><tr>
+            {['지표', '단위', '2026 목표', '2027 목표', '현재 실적', '달성률', '평가'].map(h => <th key={h}>{h}</th>)}
+          </tr></thead>
+          <tbody>
             {mockKpiTargets.map(k => {
-              const pct = Math.round((k.actual/k.target2026)*100);
+              const pct = Math.round((k.actual / k.target2026) * 100);
+              const color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+              const bgColor = pct >= 80 ? 'var(--success-bg)' : pct >= 50 ? 'var(--warning-bg)' : 'var(--danger-bg)';
               return (
-                <tr key={k.label} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800">{k.label}</td>
-                  <td className="px-4 py-3 text-slate-500">{k.unit}</td>
-                  <td className="px-4 py-3 text-right">{k.target2026.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right text-teal-600">{k.target2027.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right font-semibold">{k.actual.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right"><span className={`font-bold ${pct>=80?'text-teal-600':pct>=50?'text-amber-600':'text-red-600'}`}>{pct}%</span></td>
-                  <td className="px-4 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${pct>=80?'bg-teal-100 text-teal-700':pct>=50?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700'}`}>{pct>=80?'양호':pct>=50?'주의':'미흡'}</span></td>
+                <tr key={k.label}>
+                  <td style={{ fontWeight: 600, color: 'var(--text-1)' }}>{k.label}</td>
+                  <td style={{ color: 'var(--text-3)' }}>{k.unit}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{k.target2026.toLocaleString()}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', color: 'var(--mint)' }}>{k.target2027.toLocaleString()}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', fontWeight: 700, color: 'var(--text-1)' }}>{k.actual.toLocaleString()}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color }}>{pct}%</span>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: 11, fontWeight: 700, color, background: bgColor, padding: '2px 10px', borderRadius: 999 }}>
+                      {pct >= 80 ? '양호' : pct >= 50 ? '주의' : '미흡'}
+                    </span>
+                  </td>
                 </tr>
               );
             })}
