@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FlaskConical, Package, Globe, Target,
-  Bell, LogOut, ChevronLeft, ChevronRight, Microscope
+  Bell, LogOut, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/production', label: '생산·품질 관리', icon: Package },
   { href: '/export', label: '수출 실적 관리', icon: Globe },
   { href: '/kpi', label: 'KPI 달성 현황', icon: Target },
+  { href: '/alerts', label: '알림·이상감지', icon: Bell },
 ];
 
 export default function Sidebar() {
@@ -31,68 +32,163 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`${collapsed ? 'w-16' : 'w-60'} transition-all duration-300 bg-slate-900 text-white flex flex-col min-h-screen shrink-0`}>
-      <div className="flex items-center justify-between p-4 border-b border-slate-700">
+    <aside style={{
+      width: collapsed ? '64px' : '220px',
+      background: 'var(--navy)',
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      flexShrink: 0,
+      transition: 'width 0.2s ease',
+    }}>
+      {/* 로고 */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'space-between',
+        padding: collapsed ? '20px 0' : '20px 16px',
+        borderBottom: '1px solid var(--navy-3)',
+        gap: '10px',
+      }}>
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <Microscope className="w-6 h-6 text-teal-400 shrink-0" />
-            <div className="leading-tight">
-              <p className="font-bold text-sm text-teal-400">바이오션</p>
-              <p className="text-[10px] text-slate-400 font-normal">모이나 모니터링 플랫폼</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div style={{
+              width: 32, height: 32,
+              borderRadius: '8px',
+              background: 'var(--mint)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="6" r="3" stroke="white" strokeWidth="1.5"/>
+                <path d="M5 6 C5 6 3 10 3 13" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M11 6 C11 6 13 10 13 13" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="8" y1="9" x2="8" y2="14" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>바이오션</div>
+              <div style={{ fontSize: 10, color: 'var(--navy-text)', lineHeight: 1.3, whiteSpace: 'nowrap' }}>모이나 모니터링</div>
             </div>
           </div>
         )}
-        <button onClick={() => setCollapsed(c => !c)} className="p-1 rounded hover:bg-slate-700 ml-auto shrink-0">
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        {collapsed && (
+          <div style={{
+            width: 32, height: 32, borderRadius: '8px',
+            background: 'var(--mint)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="6" r="3" stroke="white" strokeWidth="1.5"/>
+              <line x1="8" y1="9" x2="8" y2="14" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+        )}
+        <button
+          onClick={() => setCollapsed(c => !c)}
+          style={{
+            background: 'var(--navy-3)',
+            border: 'none',
+            borderRadius: '6px',
+            color: 'var(--navy-text)',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
 
-      <nav className="flex-1 py-4">
+      {/* 네비게이션 */}
+      <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
+          const isAlerts = href === '/alerts';
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors
-                ${active ? 'bg-teal-700 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: collapsed ? '10px 0' : '9px 12px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                position: 'relative',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                background: active ? 'var(--navy-3)' : 'transparent',
+                color: active ? '#fff' : 'var(--navy-text)',
+                fontWeight: active ? 600 : 400,
+                fontSize: 13,
+                transition: 'all 0.15s ease',
+                borderLeft: active ? '3px solid var(--mint)' : '3px solid transparent',
+              }}
             >
-              <span className="relative shrink-0"><Icon className="w-5 h-5" /></span>
-              {!collapsed && <span>{label}</span>}
+              <span style={{ position: 'relative', flexShrink: 0 }}>
+                <Icon size={16} />
+                {isAlerts && unread > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-5px', right: '-5px',
+                    background: 'var(--danger)',
+                    color: '#fff',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    borderRadius: '999px',
+                    minWidth: 14, height: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-mono)',
+                  }}>{unread}</span>
+                )}
+              </span>
+              {!collapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>}
             </Link>
           );
         })}
-
-        <div className="mt-2 border-t border-slate-700 pt-2">
-          <Link
-            href="/alerts"
-            className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors
-              ${pathname.startsWith('/alerts') ? 'bg-teal-700 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
-          >
-            <span className="relative shrink-0">
-              <Bell className="w-5 h-5" />
-              {unread > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  {unread}
-                </span>
-              )}
-            </span>
-            {!collapsed && <span>알림 · 이상감지</span>}
-          </Link>
-        </div>
       </nav>
 
-      <div className="border-t border-slate-700 p-4">
+      {/* 유저 섹션 */}
+      <div style={{ padding: '12px 8px', borderTop: '1px solid var(--navy-3)' }}>
         {!collapsed && user && (
-          <div className="mb-3">
-            <p className="text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-slate-400">
+          <div style={{ padding: '8px 12px', marginBottom: '4px' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{user.name}</div>
+            <div style={{
+              display: 'inline-block',
+              fontSize: 10, fontWeight: 600,
+              background: 'var(--mint)',
+              color: '#fff',
+              padding: '1px 7px',
+              borderRadius: '999px',
+              marginTop: '3px',
+              letterSpacing: '0.04em',
+            }}>
               {user.role === 'admin' ? '관리자' : user.role === 'operator' ? '운영자' : '조회자'}
-            </p>
+            </div>
           </div>
         )}
-        <button onClick={handleLogout} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm w-full">
-          <LogOut className="w-4 h-4 shrink-0" />
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: collapsed ? '9px 0' : '9px 12px',
+            borderRadius: '8px',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--navy-text)',
+            cursor: 'pointer',
+            fontSize: 13,
+            width: '100%',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+          }}
+        >
+          <LogOut size={15} />
           {!collapsed && '로그아웃'}
         </button>
       </div>

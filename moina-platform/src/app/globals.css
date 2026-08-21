@@ -1,18 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+/* ── 디자인 토큰 ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --bg:            #F4F9F8;
+  --surface:       #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --border:        #D5E7E2;
+  --border-subtle: #E8F2F0;
+
+  /* Text */
+  --text-1: #0F1F2E;
+  --text-2: #3D5668;
+  --text-3: #7A96A6;
+
+  /* Accent – Biocen Mint */
+  --mint:        #0BB89A;
+  --mint-light:  #E3F7F3;
+  --mint-dark:   #089077;
+
+  /* Navy (sidebar) */
+  --navy:        #0A1628;
+  --navy-2:      #112238;
+  --navy-3:      #1A3152;
+  --navy-text:   #A8C5D8;
+  --navy-text-2: #FFFFFF;
+
+  /* Semantic */
+  --success:     #10B981;
+  --success-bg:  #ECFDF5;
+  --warning:     #F59E0B;
+  --warning-bg:  #FFFBEB;
+  --danger:      #EF4444;
+  --danger-bg:   #FEF2F2;
+  --info:        #6C5CE7;
+  --info-bg:     #EDE9FE;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(10,22,40,0.06), 0 1px 2px rgba(10,22,40,0.04);
+  --shadow-md: 0 4px 12px rgba(10,22,40,0.08), 0 2px 4px rgba(10,22,40,0.05);
+  --shadow-lg: 0 12px 32px rgba(10,22,40,0.12);
+
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+
+  /* Font */
+  --font-sans: 'IBM Plex Sans KR', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:            #0D1B2A;
+    --surface:       #132030;
+    --surface-raised: #1A2D40;
+    --border:        #1F3549;
+    --border-subtle: #162A3A;
+    --text-1: #E8F4F9;
+    --text-2: #8AAFC4;
+    --text-3: #4E7490;
+    --mint-light: #0A2822;
+    --success-bg: #052E1B;
+    --warning-bg: #2A1D04;
+    --danger-bg:  #2A0A0A;
+    --info-bg:    #1A1640;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  }
 }
+
+:root[data-theme="dark"] {
+  --bg:            #0D1B2A;
+  --surface:       #132030;
+  --surface-raised: #1A2D40;
+  --border:        #1F3549;
+  --border-subtle: #162A3A;
+  --text-1: #E8F4F9;
+  --text-2: #8AAFC4;
+  --text-3: #4E7490;
+  --mint-light: #0A2822;
+  --success-bg: #052E1B;
+  --warning-bg: #2A1D04;
+  --danger-bg:  #2A0A0A;
+  --info-bg:    #1A1640;
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-1);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
+
+/* ── Utility classes ── */
+.font-mono { font-family: var(--font-mono); }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ── Surface / Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Status pills ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pill-normal    { background: var(--success-bg); color: var(--success); }
+.pill-caution   { background: var(--warning-bg); color: #D97706; }
+.pill-warning   { background: var(--danger-bg);  color: var(--danger); }
+.pill-info      { background: var(--info-bg);     color: var(--info); }
+.pill-ongoing   { background: #EFF6FF; color: #3B82F6; }
+.pill-completed { background: var(--success-bg); color: var(--success); }
+.pill-failed    { background: var(--danger-bg);  color: var(--danger); }
+.pill-delivered { background: var(--success-bg); color: var(--success); }
+.pill-shipping  { background: var(--warning-bg); color: #D97706; }
+.pill-contract  { background: var(--info-bg);    color: var(--info); }
+.pill-negotiating { background: var(--border-subtle); color: var(--text-3); }
+.pill-pass      { background: var(--success-bg); color: var(--success); }
+.pill-fail      { background: var(--danger-bg);  color: var(--danger); }
+.pill-pending   { background: var(--border-subtle); color: var(--text-3); }
+
+/* ── Progress bar ── */
+.progress-track {
+  height: 6px;
+  background: var(--border-subtle);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* ── Data table ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 12px 16px;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: var(--mint-light); }
+
+/* ── Metric card ── */
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.metric-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* ── Scrollbar (webkit) ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
